@@ -12,7 +12,7 @@ pagecode_r = open("pagecode.txt", "r+")
 while url:
     try:
         request = requests.get(url)
-        pagecode_w.write(request.text)
+        pagecode_w.write(request.text.decode("utf-8"))
         for line in pagecode_r:
             href = re.search("href=", line)
             title = re.search('title=', line)
