@@ -18,9 +18,12 @@ for url in urls:
         domain = r.url
         html = r.text
         tuples = re.findall(r'(<a[^>]+/>)|(<a[^>]+>.+?</a>)', html)
+        counter = 0
         for tuple in tuples:
             for line in tuple:
                 output = open('output.csv', 'a')
+                if (counter>5):
+                    break
                 for key_word in key_words:
                     if (re.search('>.*' + key_word, line)
                             or re.search('href\s*=\s*".*' + key_word, line)
@@ -41,17 +44,24 @@ for url in urls:
                             link = double_quotes[:double_quotes.find('"')]
                         link = link.strip()
 
-                        if (link != '' and link[0] == '/'):
+                        if (link[0] == '/'):
                             if (domain[len(domain)-1] == '/'
                                     and last_link != domain + link[1:]):
-                                output.write(domain + link[1:] + '\n')
-                                last_link = domain + link[1:]
-                            elif (last_link != domain + link):
-                                output.write(domain + link + '\n')
-                                last_link = domain + link
-                        elif (link != '' and last_link != link):
+                                link = domain + link[1:]
+                            else:
+                                link = domain + link
+                            if(link != ''
+                                    and requests.get(link).status_code == 200
+                                    and requests.get(link).text.find('magento')):
+                                output.write(link + '\n')
+                                last_link = link
+                                counter += 1
+                        elif (link != '' and last_link != link
+                                and requests.get(link).status_code == 200
+                                and requests.get(link).text.find('magento')):
                             output.write(link + '\n')
                             last_link = link
+                            counter += 1
                 output.close()
     except:
         if (url != 'http://'):

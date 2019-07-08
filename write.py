@@ -1,6 +1,6 @@
 import requests
 import re
 
-string = "k href='fjdlglknfd'"
-string = string[string.find('href'):]
-print(string[string.find("'")+1:])
+string = requests.get('https://za.pearson.com/careers/career-opportunities.html').text
+if(string.find('magento')):
+    print('found')
