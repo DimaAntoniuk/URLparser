@@ -1,3 +1,6 @@
-output = open('output.csv', 'a')
-last_home_url = 'last home url'
-output.write(last_home_url+'\n')
+import requests
+import re
+
+string = "k href='fjdlglknfd'"
+string = string[string.find('href'):]
+print(string[string.find("'")+1:])
