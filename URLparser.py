@@ -1,7 +1,14 @@
 import requests
 import re
 
-key_words = ["career", "vacancy", "vacancies", "hiring", "Job"]
+def delete_from_js(text):
+    text = text.replace('Magento_', '')
+    text = text.replace('-magento-', '')
+    text = text.replace('/Magento/', '')
+    text = re.sub(r'(?i){[^}]+magento[^}]+}', '', text)
+    return text
+
+key_words = ["career", "vacancy", "vacancies", "hiring", "Job", "recruit", "opportunit"]
 
 input = open('input.csv', 'r')
 
@@ -21,7 +28,6 @@ for url in urls:
         counter = 0
         for tuple in tuples:
             for line in tuple:
-                #output = open('output.csv', 'a')
                 output = open('strong_parse.csv', 'a')
                 if (counter>5):
                     output.close()
@@ -54,9 +60,9 @@ for url in urls:
                             try:
                                 link_r = requests.get(link)
                                 link_html = link_r.text
-                                # pattern = r'src=[\"\'][^>]+[\"\']'
                                 pattern = r'<[^>]+>'
-                                re.sub(pattern, "", link_html)
+                                link_html = re.sub(pattern, "", link_html)
+                                link_html = delete_from_js(link_html)
                                 if(last_link!= link and link_r.status_code == 200
                                         and re.search(r'magento', link_html, re.IGNORECASE)):
                                     output.write(link + '\n')
@@ -68,9 +74,9 @@ for url in urls:
                             try:
                                 link_r = requests.get(link)
                                 link_html = link_r.text
-                                # pattern = r'src=[\"\'][^>]+[\"\']'
                                 pattern = r'<[^>]+>'
-                                re.sub(pattern, "", link_html)
+                                link_html = re.sub(pattern, "", link_html)
+                                link_html = delete_from_js(link_html)
                                 if(link_r.status_code == 200
                                         and re.search(r'magento', link_html, re.IGNORECASE)):
                                     output.write(link + '\n')
