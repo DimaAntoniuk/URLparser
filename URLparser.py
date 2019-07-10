@@ -10,7 +10,7 @@ def delete_from_js(text):
 
 key_words = ["career", "vacancy", "vacancies", "hiring", "Job", "recruit", "opportunit"]
 
-input = open('input.csv', 'r')
+input = open('test.csv', 'r')
 
 urls = input.read().split('\n')
 
