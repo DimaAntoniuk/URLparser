@@ -1,22 +1,53 @@
 import requests
 import re
 
-def delete_from_js(text):
-    text = text.replace('Magento_', '')
-    text = text.replace('-magento-', '')
-    text = text.replace('/Magento/', '')
-    text = re.sub(r'(?i){[^}]+magento[^}]+}', '', text)
-    return text
+class File(object):
+    def __init__(self, file_name, method):
+        self.file_obj = open(file_name, method)
+    def __enter__(self):
+        return self.file_obj
+    def __exit__(self, type, value, traceback):
+        self.file_obj.close()
+
 
 key_words = ["career", "vacancy", "vacancies", "hiring", "Job", "recruit", "opportunit"]
 
-input = open('test.csv', 'r')
-
-urls = input.read().split('\n')
-
-input.close()
+with File("test.csv", "r") as input:
+    urls = input.read().split('\n')
 
 last_link = ''
+counter = 0
+
+def delete_from_js(text):
+    magento_in_js = ["Magento_", "-magento-", "/Magento/"]
+    for magento in magento_in_js:
+        text = text.replace(magento, '')
+    pattern = r'(?i){[^}]+magento[^}]+}'
+    text = re.sub(pattern, '', text)
+    return text
+
+def after_party(link):
+    global last_link
+    global counter
+    last_link = link
+    counter += 1
+
+after_party("string")
+def process_link(link):
+    try:
+        link_r = requests.get(link)
+        link_html = link_r.text
+        pattern = r'<[^>]+>'
+        link_html = re.sub(pattern, "", link_html)
+        link_html = delete_from_js(link_html)
+        if(last_link!= link and link_r.status_code == 200
+                and re.search(r'magento', link_html, re.IGNORECASE)):
+            with File("strong_parse.csv", "a") as output:
+                output.write(link + '\n')
+            after_party(link)
+    except:
+        print('Bad sublink')
+
 
 for url in urls:
     url = 'http://'+url
@@ -24,16 +55,14 @@ for url in urls:
         r = requests.get(url)
         domain = r.url
         html = r.text
-        tuples = re.findall(r'(<a[^>]+/>)|(<a[^>]+>.+?</a>)', html)
+        pattern = r'(<a[^>]+/>)|(<a[^>]+>.+?</a>)'
+        tuples = re.findall(pattern, html)
         counter = 0
         for tuple in tuples:
             for line in tuple:
-                output = open('strong_parse.csv', 'a')
                 if (counter>5):
-                    output.close()
                     break
                 for key_word in key_words:
-###################################link########################################
                     if (re.search(r'>.*' + key_word, line)
                             or re.search(r'href\s*=\s*".*' + key_word, line, re.IGNORECASE)
                             or re.search(r"href\s*=\s*'.*" + key_word, line, re.IGNORECASE)):
@@ -50,41 +79,14 @@ for url in urls:
                         elif (link==''):
                             link = double_quotes[:double_quotes.find('"')]
                         link = link.strip()
-################################magento########################################
                         if (link != '' and link[0] == '/'):
-                            if (domain[len(domain)-1] == '/'
-                                    and last_link != domain + link[1:]):
+                            if (domain[len(domain)-1] == '/'):
                                 link = domain + link[1:]
                             else:
                                 link = domain + link
-                            try:
-                                link_r = requests.get(link)
-                                link_html = link_r.text
-                                pattern = r'<[^>]+>'
-                                link_html = re.sub(pattern, "", link_html)
-                                link_html = delete_from_js(link_html)
-                                if(last_link!= link and link_r.status_code == 200
-                                        and re.search(r'magento', link_html, re.IGNORECASE)):
-                                    output.write(link + '\n')
-                                    last_link = link
-                                    counter += 1
-                            except:
-                                print('Bad sublink')
+                            process_link(link)
                         elif (link != '' and last_link != link):
-                            try:
-                                link_r = requests.get(link)
-                                link_html = link_r.text
-                                pattern = r'<[^>]+>'
-                                link_html = re.sub(pattern, "", link_html)
-                                link_html = delete_from_js(link_html)
-                                if(link_r.status_code == 200
-                                        and re.search(r'magento', link_html, re.IGNORECASE)):
-                                    output.write(link + '\n')
-                                    last_link = link
-                                    counter += 1
-                            except:
-                                print('Bad sublink')
-                output.close()
+                            process_link(link)
     except :
         if (url != 'http://'):
             print(url + " is a bad one\n")
